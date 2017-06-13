@@ -31,6 +31,7 @@
             <groupId>org.n52.series-api</groupId>
             <artifactId>web-resources</artifactId>
             <scope>runtime</scope>
+            <type>war</type>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -151,20 +152,13 @@
             </resource>
         </resources>
 
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
 
+        <filters>
+            <filter>src/main/resources/application.properties</filter>
+            <filter>${local.configFile}</filter>
+        </filters>
+        
+        <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -173,36 +167,6 @@
 
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <configuration>
-                        <artifactItems>
-                            <artifactItem>
-                                <groupId>org.n52.series-api</groupId>
-                                <artifactId>rest</artifactId>
-                                <includes>api-doc/**</includes>
-                                <outputDirectory>${webappDirectory}</outputDirectory>
-                                <overWrite>false</overWrite>
-                            </artifactItem>
-                            <artifactItem>
-                                <groupId>org.n52.series-api</groupId>
-                                <artifactId>web-resources</artifactId>
-                                <includes>docs/**</includes>
-                                <outputDirectory>${webappDirectory}</outputDirectory>
-                                <overWrite>false</overWrite>
-                            </artifactItem>
-                            <artifactItem>
-                                <groupId>org.n52.series-api</groupId>
-                                <artifactId>web-resources</artifactId>
-                                <includes>landing/**</includes>
-                                <outputDirectory>${webappDirectory}</outputDirectory>
-                                <overWrite>false</overWrite>
-                            </artifactItem>
-                        </artifactItems>
-                        <overWriteReleases>false</overWriteReleases>
-                    </configuration>
-                </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -217,6 +181,13 @@
                                 <filtering>true</filtering>
                             </resource>
                         </webResources>
+                        <overlays>
+                            <overlay>
+                                <groupId>org.n52.series-api</groupId>
+                                <artifactId>web-resources</artifactId>
+                                <filtered>true</filtered>
+                            </overlay>
+                        </overlays>
                     </configuration>
                 </plugin>
 
