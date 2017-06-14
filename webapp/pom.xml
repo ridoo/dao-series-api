@@ -202,7 +202,7 @@
                         <webAppConfig>
                             <contextPath>/</contextPath>
                             <allowDuplicateFragmentNames>true</allowDuplicateFragmentNames>
-                            <extraClasspath>/target/classes/;${project.build.outputDirectory};../series-dao/target/classes;../../io/target/classes;../../rest/target/classes;</extraClasspath>
+                            <extraClasspath>target/classes/;${webappDirectory};${project.build.outputDirectory};../series-dao/target/classes;../../io/target/classes;../../rest/target/classes;</extraClasspath>
                         </webAppConfig>
                         <scanTargets>
                             <scanTarget>/target/classes/</scanTarget>
