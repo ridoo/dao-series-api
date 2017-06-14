@@ -60,6 +60,15 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet>
+        <servlet-name>docs-dispatcher</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>/WEB-INF/spring/docs-dispatcher-servlet.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet>
         <servlet-name>landingPage</servlet-name>
         <jsp-file>/index.html</jsp-file>
     </servlet>
@@ -71,6 +80,10 @@
     <servlet-mapping>
         <servlet-name>landingPage</servlet-name>
         <url-pattern>/api</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>docs-dispatcher</servlet-name>
+        <url-pattern>/docs/*</url-pattern>
     </servlet-mapping>
 
     <welcome-file-list>
