@@ -337,6 +337,7 @@ public class PlatformRepository extends ParameterRepository<PlatformEntity, Plat
 
     private PlatformEntity convertToPlatform(FeatureEntity entity) {
         PlatformEntity result = new PlatformEntity();
+        //TODO(specki): add fields filter
         result.setDomainId(entity.getDomainId());
         result.setPkid(entity.getPkid());
         result.setName(entity.getName());

@@ -157,6 +157,10 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
         return createDataAccessRepository(valueType, session);
     }
 
+    private DatasetDao< ? extends DatasetEntity> getSeriesDao(Class< ? extends DatasetEntity> clazz, Session session) {
+        return new DatasetDao<>(session, clazz);
+    }
+
     private DatasetDao< ? extends DatasetEntity> createDataAccessRepository(String valueType, Session session)
             throws DataAccessException {
         try {
@@ -165,10 +169,6 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
         } catch (DatasetFactoryException e) {
             throw new DataAccessException(e.getMessage());
         }
-    }
-
-    private DatasetDao< ? extends DatasetEntity> getSeriesDao(Class< ? extends DatasetEntity> clazz, Session session) {
-        return new DatasetDao<>(session, clazz);
     }
 
     @Override
@@ -265,14 +265,21 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
     // XXX refactor generics
     protected DatasetOutput createCondensed(DatasetEntity< ? > series, DbQuery query, Session session)
             throws DataAccessException {
+        //TODO(specki): add fields filter
         DatasetOutput output = new DatasetOutput(series.getValueType()) {};
-        output.setLabel(createSeriesLabel(series, query.getLocale()));
         output.setId(series.getPkid()
                            .toString());
         output.setDomainId(series.getDomainId());
-        output.setHrefBase(urlHelper.getDatasetsHrefBaseUrl(query.getHrefBase()));
-        PlatformOutput platform = getCondensedPlatform(series, query, session);
-        output.setPlatformType(platform.getPlatformType());
+        if (query.isRequested("label")) {
+            output.setLabel(createSeriesLabel(series, query.getLocale()));
+        }
+        if (query.isRequested("href")) {
+            output.setHrefBase(urlHelper.getDatasetsHrefBaseUrl(query.getHrefBase()));
+        }
+        if (query.isRequested("platformType")) {
+            PlatformOutput platform = getCondensedPlatform(series, query, session);
+            output.setPlatformType(platform.getPlatformType());
+        }
         return output;
     }
 
@@ -281,17 +288,26 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
             throws DataAccessException {
         try {
             DatasetOutput result = createCondensed(series, query, session);
+            //TODO(specki): fix upstream dependencies on seriesParameters
+            // if (query.isRequested("seriesParameters")){
             SeriesParameters seriesParameters = createSeriesParameters(series, query, session);
             seriesParameters.setPlatform(getCondensedPlatform(series, query, session));
             result.setSeriesParameters(seriesParameters);
+            //}
 
             if (series.getService() == null) {
                 series.setService(getServiceEntity());
             }
-            result.setUom(series.getUnitI18nName(query.getLocale()));
+            if (query.isRequested("uom")) {
+                result.setUom(series.getUnitI18nName(query.getLocale()));
+            }
             DataRepository dataRepository = dataRepositoryFactory.create(series.getValueType());
-            result.setFirstValue(dataRepository.getFirstValue(series, session, query));
-            result.setLastValue(dataRepository.getLastValue(series, session, query));
+            if (query.isRequested("firstValue")) {
+                result.setFirstValue(dataRepository.getFirstValue(series, session, query));
+            }
+            if (query.isRequested("lastValue")) {
+                result.setLastValue(dataRepository.getLastValue(series, session, query));
+            }
             return result;
         } catch (DatasetFactoryException ex) {
             throwNewCreateFactoryException(ex);
@@ -316,11 +332,11 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
                                 .getLabelFrom(locale);
         StringBuilder sb = new StringBuilder();
         sb.append(phenomenon)
-          .append(" ");
+            .append(" ");
         sb.append(procedure)
-          .append(", ");
+            .append(", ");
         sb.append(station)
-          .append(", ");
+            .append(", ");
         return sb.append(offering)
                  .toString();
     }

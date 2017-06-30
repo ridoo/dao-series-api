@@ -182,13 +182,20 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
 
     protected TimeseriesMetadataOutput createExpanded(QuantityDatasetEntity series, DbQuery query, Session session)
             throws DataAccessException {
+        //TODO(specki): add fields filter
         TimeseriesMetadataOutput output = createCondensed(series, query, session);
         output.setSeriesParameters(createTimeseriesOutput(series, query));
         QuantityDataRepository repository = createRepository(ValueType.DEFAULT_VALUE_TYPE);
 
-        output.setReferenceValues(createReferenceValueOutputs(series, query, repository));
-        output.setFirstValue(repository.getFirstValue(series, session, query));
-        output.setLastValue(repository.getLastValue(series, session, query));
+        if (query.isRequested("referenceValues")) {
+            output.setReferenceValues(createReferenceValueOutputs(series, query, repository));
+        }
+        if (query.isRequested("firstValue")) {
+            output.setFirstValue(repository.getFirstValue(series, session, query));
+        }
+        if (query.isRequested("lastValue")) {
+            output.setLastValue(repository.getLastValue(series, session, query));
+        }
         return output;
     }
 
@@ -231,30 +238,37 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
             throws DataAccessException {
         TimeseriesMetadataOutput output = new TimeseriesMetadataOutput();
         String locale = query.getLocale();
-        String phenomenonLabel = entity.getPhenomenon()
-                                       .getLabelFrom(locale);
-        String procedureLabel = entity.getProcedure()
-                                      .getLabelFrom(locale);
-        String stationLabel = entity.getFeature()
-                                    .getLabelFrom(locale);
-        String offeringLabel = entity.getOffering()
-                                     .getLabelFrom(locale);
-        output.setLabel(createTimeseriesLabel(phenomenonLabel, procedureLabel, stationLabel, offeringLabel));
+        //TODO(specki): add fields filter
+        if (query.isRequested("label")) {
+            String phenomenonLabel = entity.getPhenomenon()
+                                           .getLabelFrom(locale);
+            String procedureLabel = entity.getProcedure()
+                                          .getLabelFrom(locale);
+            String stationLabel = entity.getFeature()
+                                        .getLabelFrom(locale);
+            String offeringLabel = entity.getOffering()
+                                         .getLabelFrom(locale);
+            output.setLabel(createTimeseriesLabel(phenomenonLabel, procedureLabel, stationLabel, offeringLabel));
+        }
         output.setId(entity.getPkid()
                            .toString());
-        output.setUom(entity.getUnitI18nName(locale));
-        output.setStation(createCondensedStation(entity, query, session));
+        if (query.isRequested("uom")) {
+            output.setUom(entity.getUnitI18nName(locale));
+        }
+        if (query.isRequested("station")) {
+            output.setStation(createCondensedStation(entity, query, session));
+        }
         return output;
     }
 
     private String createTimeseriesLabel(String phenomenon, String procedure, String station, String offering) {
         StringBuilder sb = new StringBuilder();
         sb.append(phenomenon)
-          .append(" ");
+            .append(" ");
         sb.append(procedure)
-          .append(", ");
+            .append(", ");
         sb.append(station)
-          .append(", ");
+            .append(", ");
         return sb.append(offering)
                  .toString();
     }

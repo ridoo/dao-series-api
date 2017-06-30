@@ -379,9 +379,9 @@ public class DbQuery {
                                                               DetachedCriteria filter, String prefix) {
         if (hasValues(values)) {
             filter.createCriteria(entity, prefix + "e")
-                  // join the parents to enable filtering via parent ids
-                  .createAlias(prefix + "e.parents", prefix + "p", JoinType.LEFT_OUTER_JOIN)
-                  .add(Restrictions.or(createIdCriterion(values, prefix + "e"),
+                    // join the parents to enable filtering via parent ids
+                    .createAlias(prefix + "e.parents", prefix + "p", JoinType.LEFT_OUTER_JOIN)
+                    .add(Restrictions.or(createIdCriterion(values, prefix + "e"),
                                        Restrictions.in(prefix + "p.pkid", QueryUtils.parseToIds(values))));
         }
         return filter;
@@ -451,6 +451,20 @@ public class DbQuery {
             }
         }
         return set;
+    }
+
+    /**
+     * Returns whether the specific field is requested in the Query parameter "fields".
+     * Returns true if field is requested or 'fields' parameter is not present in the query.
+     *
+     * @param field
+     *        to be checked if it is requested.
+     *
+     * @return true if field is requested in query, false otherwise.
+     */
+    public boolean isRequested (String field) {
+        return (!getParameters().containsParameter(Parameters.FILTER_FIELDS)) ||
+               (getParameters().getFields().contains(field));
     }
 
     public IoParameters getParameters() {

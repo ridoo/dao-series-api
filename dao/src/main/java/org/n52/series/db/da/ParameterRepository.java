@@ -52,14 +52,23 @@ public abstract class ParameterRepository<E extends DescribableEntity, O extends
 
     protected abstract SearchResult createEmptySearchResult(String id, String label, String baseUrl);
 
-    protected abstract O createExpanded(E instance, DbQuery query, Session session)
-            throws DataAccessException;
-
     protected abstract String createHref(String hrefBase);
 
     protected abstract AbstractDao<E> createDao(Session session);
 
     protected abstract SearchableDao<E> createSearchableDao(Session session);
+
+    protected abstract O createExpanded(E instance, DbQuery query, Session session)
+        throws DataAccessException;
+
+    protected List<O> createExpanded(Iterable<E> allInstances, DbQuery query, Session session)
+            throws DataAccessException {
+        List<O> results = new ArrayList<>();
+        for (E entity : allInstances) {
+            results.add(createExpanded(entity, query, session));
+        }
+        return results;
+    }
 
     @Override
     public boolean exists(String id, DbQuery query) throws DataAccessException {
@@ -100,9 +109,11 @@ public abstract class ParameterRepository<E extends DescribableEntity, O extends
     protected O createCondensed(E entity, DbQuery query, Session session) {
         O result = prepareEmptyParameterOutput(entity);
         result.setId(Long.toString(entity.getPkid()));
-        result.setLabel(entity.getLabelFrom(query.getLocale()));
+        if (query.isRequested("label")) {
+            result.setLabel(entity.getLabelFrom(query.getLocale()));
+        }
         result.setDomainId(entity.getDomainId());
-        if (query.getHrefBase() != null) {
+        if (query.isRequested("href") && query.getHrefBase() != null) {
             result.setHrefBase(createHref(query.getHrefBase()));
         }
         return result;
@@ -122,15 +133,6 @@ public abstract class ParameterRepository<E extends DescribableEntity, O extends
     public List<O> getAllExpanded(DbQuery query, Session session) throws DataAccessException {
         List<E> allInstances = getAllInstances(query, session);
         return createExpanded(allInstances, query, session);
-    }
-
-    protected List<O> createExpanded(Iterable<E> allInstances, DbQuery query, Session session)
-            throws DataAccessException {
-        List<O> results = new ArrayList<>();
-        for (E entity : allInstances) {
-            results.add(createExpanded(entity, query, session));
-        }
-        return results;
     }
 
     protected List<E> getAllInstances(DbQuery parameters, Session session) throws DataAccessException {
