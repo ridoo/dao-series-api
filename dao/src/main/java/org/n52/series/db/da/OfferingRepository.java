@@ -68,6 +68,9 @@ public class OfferingRepository extends HierarchicalParameterRepository<Offering
     @Override
     protected OfferingOutput createExpanded(OfferingEntity entity, DbQuery parameters, Session session) {
         OfferingOutput result = createCondensed(entity, parameters, session);
+        if (parameters.fieldParamNotPresent() || !parameters.isRequested("service")) {
+            return result;
+        }
         if (parameters.getHrefBase() != null) {
             result.setService(getCondensedExtendedService(getServiceEntity(entity), parameters));
         } else {

@@ -166,13 +166,16 @@ public class PlatformRepository extends ParameterRepository<PlatformEntity, Plat
                                              .removeAllOf(Parameters.FILTER_PLATFORM_TYPES));
 
         List<DatasetOutput> datasets = seriesRepository.getAllCondensed(query);
-        result.setDatasets(datasets);
-
-        Geometry geometry = entity.getGeometry();
-        result.setGeometry(geometry == null
-                ? getLastSamplingGeometry(datasets, query, session)
-                : geometry);
-        if (entity.hasParameters()) {
+        if (parameters.fieldParamNotPresent() || parameters.isRequested("datasets")) {
+            result.setDatasets(datasets);
+        }
+        if (parameters.fieldParamNotPresent() || parameters.isRequested("geometry")) {
+            Geometry geometry = entity.getGeometry();
+            result.setGeometry(geometry == null
+                    ? getLastSamplingGeometry(datasets, query, session)
+                    : geometry);
+        }
+        if (parameters.fieldParamNotPresent() || parameters.isRequested("parameters") && entity.hasParameters()) {
             String locale = parameters.getLocale();
             for (Parameter< ? > parameter : entity.getParameters()) {
                 result.addParameter(parameter.toValueMap(locale));

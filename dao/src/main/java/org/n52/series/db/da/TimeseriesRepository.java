@@ -182,18 +182,18 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
 
     protected TimeseriesMetadataOutput createExpanded(QuantityDatasetEntity series, DbQuery query, Session session)
             throws DataAccessException {
-        //TODO(specki): add fields filter
+        boolean fieldParamPresent = query.fieldParamNotPresent();
         TimeseriesMetadataOutput output = createCondensed(series, query, session);
         output.setSeriesParameters(createTimeseriesOutput(series, query));
         QuantityDataRepository repository = createRepository(ValueType.DEFAULT_VALUE_TYPE);
 
-        if (query.isRequested("referenceValues")) {
+        if (fieldParamPresent || query.isRequested("referenceValues")) {
             output.setReferenceValues(createReferenceValueOutputs(series, query, repository));
         }
-        if (query.isRequested("firstValue")) {
+        if (fieldParamPresent || query.isRequested("firstValue")) {
             output.setFirstValue(repository.getFirstValue(series, session, query));
         }
-        if (query.isRequested("lastValue")) {
+        if (fieldParamPresent || query.isRequested("lastValue")) {
             output.setLastValue(repository.getLastValue(series, session, query));
         }
         return output;
@@ -237,9 +237,11 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
     private TimeseriesMetadataOutput createCondensed(QuantityDatasetEntity entity, DbQuery query, Session session)
             throws DataAccessException {
         TimeseriesMetadataOutput output = new TimeseriesMetadataOutput();
+        boolean fieldParamPresent = query.fieldParamNotPresent();
         String locale = query.getLocale();
-        //TODO(specki): add fields filter
-        if (query.isRequested("label")) {
+        output.setId(entity.getPkid()
+                          .toString());
+        if (fieldParamPresent || query.isRequested("label")){
             String phenomenonLabel = entity.getPhenomenon()
                                            .getLabelFrom(locale);
             String procedureLabel = entity.getProcedure()
@@ -250,12 +252,11 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
                                          .getLabelFrom(locale);
             output.setLabel(createTimeseriesLabel(phenomenonLabel, procedureLabel, stationLabel, offeringLabel));
         }
-        output.setId(entity.getPkid()
-                           .toString());
-        if (query.isRequested("uom")) {
+
+        if (fieldParamPresent || query.isRequested("uom")) {
             output.setUom(entity.getUnitI18nName(locale));
         }
-        if (query.isRequested("station")) {
+        if (fieldParamPresent || query.isRequested("station")) {
             output.setStation(createCondensedStation(entity, query, session));
         }
         return output;

@@ -157,10 +157,21 @@ public class ServiceRepository extends ParameterRepository<ServiceEntity, Servic
     @Override
     protected ServiceOutput createExpanded(ServiceEntity entity, DbQuery parameters, Session session) {
         ServiceOutput service = getCondensedService(entity, parameters);
-        service.setQuantities(countParameters(service, parameters));
-        service.setSupportsFirstLatest(entity.isSupportsFirstLatest());
-        service.setServiceUrl(entity.getUrl());
-        service.setType(getServiceType(entity));
+        // Reduce calls to query.isRequested if field parameter is not present
+        boolean fieldParamPresent = parameters.fieldParamNotPresent();
+
+        if (fieldParamPresent || parameters.isRequested("quantities")) {
+            service.setQuantities(countParameters(service, parameters));
+        }
+        if (fieldParamPresent || parameters.isRequested("supportsFirstLatest")) {
+            service.setSupportsFirstLatest(entity.isSupportsFirstLatest());
+        }
+        if (fieldParamPresent || parameters.isRequested("url")) {
+            service.setServiceUrl(entity.getUrl());
+        }
+        if (fieldParamPresent || parameters.isRequested("type")) {
+            service.setType(getServiceType(entity));
+        }
 
         FilterResolver filterResolver = parameters.getFilterResolver();
         if (filterResolver.shallBehaveBackwardsCompatible()) {
@@ -170,7 +181,9 @@ public class ServiceRepository extends ParameterRepository<ServiceEntity, Servic
             service.setVersion(entity.getVersion() != null
                     ? entity.getVersion()
                     : "2.0");
-            addSupportedDatasetsTo(service);
+            if (fieldParamPresent || parameters.isRequested("supportedMimeTypes")) {
+                addSupportedDatasetsTo(service);
+            }
 
             // TODO add features
             // TODO different counts

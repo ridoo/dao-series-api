@@ -86,6 +86,8 @@ public class DbQuery {
 
     private String databaseSridCode = "EPSG:4326";
 
+    private Boolean fieldParamPresent = null;
+
     public DbQuery(IoParameters parameters) {
         if (parameters != null) {
             this.parameters = parameters;
@@ -455,7 +457,6 @@ public class DbQuery {
 
     /**
      * Returns whether the specific field is requested in the Query parameter "fields".
-     * Returns true if field is requested or 'fields' parameter is not present in the query.
      *
      * @param field
      *        to be checked if it is requested.
@@ -463,8 +464,19 @@ public class DbQuery {
      * @return true if field is requested in query, false otherwise.
      */
     public boolean isRequested (String field) {
-        return (!getParameters().containsParameter(Parameters.FILTER_FIELDS)) ||
-               (getParameters().getFields().contains(field));
+        return getParameters().getFields().contains(field.toLowerCase());
+    }
+
+    /**
+     * Returns whether the query contains the "field" parameter.
+     *
+     * @return false if field is requested in query, true otherwise.
+     */
+    public boolean fieldParamNotPresent () {
+        if (fieldParamPresent == null) {
+            fieldParamPresent = getParameters().containsParameter(Parameters.FILTER_FIELDS);
+        }
+        return !fieldParamPresent;
     }
 
     public IoParameters getParameters() {

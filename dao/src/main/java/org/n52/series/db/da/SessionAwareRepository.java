@@ -218,8 +218,10 @@ public abstract class SessionAwareRepository {
     protected <T extends ParameterOutput> T createCondensed(T outputvalue,
                                                             DescribableEntity entity,
                                                             DbQuery parameters) {
-        outputvalue.setLabel(entity.getLabelFrom(parameters.getLocale()));
         outputvalue.setId(Long.toString(entity.getPkid()));
+        if (parameters.fieldParamNotPresent() || parameters.isRequested("label")) {
+            outputvalue.setLabel(entity.getLabelFrom(parameters.getLocale()));
+        }
         return outputvalue;
     }
 
