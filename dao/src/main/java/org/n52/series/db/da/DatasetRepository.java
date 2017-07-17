@@ -271,8 +271,8 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
         boolean fieldParamNotPresent = query.fieldParamNotPresent();
         output.setId(series.getPkid()
                            .toString());
-        if (fieldParamNotPresent || !query.isRequested("valueType")) {
-            series.setValueType(null);
+        if (!(fieldParamNotPresent || query.isRequested("valueType"))) {
+            output.setValueType(null);
         }
         if (fieldParamNotPresent || query.isRequested("label")) {
             output.setDomainId(series.getDomainId());
@@ -296,9 +296,9 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
             boolean fieldParamNotPresent = query.fieldParamNotPresent();
             //TODO(specki): fix upstream dependencies on seriesParameters
             if (fieldParamNotPresent || query.isRequested("seriesParameters")) {
-                SeriesParameters seriesParameters = createSeriesParameters(series, query, session);
-                seriesParameters.setPlatform(getCondensedPlatform(series, query, session));
-                result.setSeriesParameters(seriesParameters);
+                SeriesParameters seriesParams = createSeriesParameters(series, query.removeFieldParameter(), session);
+                seriesParams.setPlatform(getCondensedPlatform(series, query.removeFieldParameter(), session));
+                result.setSeriesParameters(seriesParams);
             }
             if (fieldParamNotPresent || query.isRequested("service") && series.getService() == null) {
                 series.setService(getServiceEntity());

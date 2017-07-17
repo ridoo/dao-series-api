@@ -36,8 +36,10 @@ import java.util.List;
 import org.hibernate.Session;
 import org.n52.io.request.IoParameters;
 import org.n52.io.response.ParameterOutput;
+import org.n52.io.response.PlatformOutput;
 import org.n52.series.db.DataAccessException;
 import org.n52.series.db.beans.DescribableEntity;
+import org.n52.series.db.beans.PlatformEntity;
 import org.n52.series.db.dao.AbstractDao;
 import org.n52.series.db.dao.DbQuery;
 import org.n52.series.db.dao.SearchableDao;
@@ -108,6 +110,12 @@ public abstract class ParameterRepository<E extends DescribableEntity, O extends
 
     protected O createCondensed(E entity, DbQuery query, Session session) {
         O result = prepareEmptyParameterOutput(entity);
+        // Special handling for PlatformEntity to remove platformType Attribute if not requested
+        if (entity instanceof PlatformEntity) {
+            if (!(query.fieldParamNotPresent() || query.isRequested("platformtype"))) {
+                result = (O) new PlatformOutput(null);
+            }
+        }
         result.setId(Long.toString(entity.getPkid()));
         if (query.fieldParamNotPresent() || query.isRequested("label")) {
             result.setLabel(entity.getLabelFrom(query.getLocale()));

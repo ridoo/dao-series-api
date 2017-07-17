@@ -172,15 +172,19 @@ public class ServiceRepository extends ParameterRepository<ServiceEntity, Servic
         if (fieldParamPresent || parameters.isRequested("type")) {
             service.setType(getServiceType(entity));
         }
-
+        String version = "version";
         FilterResolver filterResolver = parameters.getFilterResolver();
         if (filterResolver.shallBehaveBackwardsCompatible()) {
             // ensure backwards compatibility
-            service.setVersion("1.0.0");
+            if (fieldParamPresent || parameters.isRequested(version)) {
+                service.setVersion("1.0.0");
+            }
         } else {
+            if (fieldParamPresent || parameters.isRequested(version)) {
             service.setVersion(entity.getVersion() != null
                     ? entity.getVersion()
                     : "2.0");
+            }
             if (fieldParamPresent || parameters.isRequested("supportedMimeTypes")) {
                 addSupportedDatasetsTo(service);
             }

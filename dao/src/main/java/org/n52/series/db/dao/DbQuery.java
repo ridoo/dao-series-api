@@ -86,7 +86,7 @@ public class DbQuery {
 
     private String databaseSridCode = "EPSG:4326";
 
-    private Boolean fieldParamPresent = null;
+    private Boolean fieldParamPresent;
 
     public DbQuery(IoParameters parameters) {
         if (parameters != null) {
@@ -477,6 +477,17 @@ public class DbQuery {
             fieldParamPresent = getParameters().containsParameter(Parameters.FILTER_FIELDS);
         }
         return !fieldParamPresent;
+    }
+
+    /**
+     * Removes the "fields" Query-Parameter.
+     *
+     * @return DbQuery itself for method chaining.
+     */
+    public DbQuery removeFieldParameter() {
+        parameters = parameters.removeAllOf("fields");
+        fieldParamPresent = false;
+        return this;
     }
 
     public IoParameters getParameters() {

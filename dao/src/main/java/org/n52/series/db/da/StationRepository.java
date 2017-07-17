@@ -178,7 +178,7 @@ public class StationRepository extends SessionAwareRepository
     private StationOutput createExpanded(FeatureEntity feature, DbQuery query, Session session)
             throws DataAccessException {
         StationOutput stationOutput = createCondensed(feature, query);
-        if (query.fieldParamNotPresent() || query.isRequested("timeseries")) {
+        if (query.fieldParamNotPresent() || query.isRequested("properties") || query.isRequested("timeseries")) {
             Class<QuantityDatasetEntity> clazz = QuantityDatasetEntity.class;
             DatasetDao<QuantityDatasetEntity> seriesDao = new DatasetDao<>(session, clazz);
             List<QuantityDatasetEntity> series = seriesDao.getInstancesWith(feature, query);
@@ -192,8 +192,8 @@ public class StationRepository extends SessionAwareRepository
         boolean fieldParamPresent = query.fieldParamNotPresent();
         stationOutput.setId(Long.toString(entity.getPkid()));
 
-        if (fieldParamPresent || query.isRequested("geometry")) {
-            stationOutput.setGeometry(createPoint(entity, query));
+        if (fieldParamPresent || query.isRequested("geometry") || query.isRequested("type")) {
+            stationOutput.setGeometry(createPoint(entity, query.removeFieldParameter()));
         }
         if (fieldParamPresent || query.isRequested("label")) {
             stationOutput.setLabel(entity.getLabelFrom(query.getLocale()));

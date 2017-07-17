@@ -72,9 +72,10 @@ public class OfferingRepository extends HierarchicalParameterRepository<Offering
             return result;
         }
         if (parameters.getHrefBase() != null) {
-            result.setService(getCondensedExtendedService(getServiceEntity(entity), parameters));
+            result.setService(getCondensedExtendedService(getServiceEntity(entity),
+                                                          parameters.removeFieldParameter()));
         } else {
-            result.setService(getCondensedService(getServiceEntity(entity), parameters));
+            result.setService(getCondensedService(getServiceEntity(entity), parameters.removeFieldParameter()));
         }
         return result;
     }

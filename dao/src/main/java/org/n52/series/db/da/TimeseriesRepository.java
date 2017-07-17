@@ -184,11 +184,13 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
             throws DataAccessException {
         boolean fieldParamPresent = query.fieldParamNotPresent();
         TimeseriesMetadataOutput output = createCondensed(series, query, session);
-        output.setSeriesParameters(createTimeseriesOutput(series, query));
         QuantityDataRepository repository = createRepository(ValueType.DEFAULT_VALUE_TYPE);
 
+        if (fieldParamPresent || query.isRequested("parameters")) {
+            output.setSeriesParameters(createTimeseriesOutput(series, query));
+        }
         if (fieldParamPresent || query.isRequested("referenceValues")) {
-            output.setReferenceValues(createReferenceValueOutputs(series, query, repository));
+            output.setReferenceValues(createReferenceValueOutputs(series, query.removeFieldParameter(), repository));
         }
         if (fieldParamPresent || query.isRequested("firstValue")) {
             output.setFirstValue(repository.getFirstValue(series, session, query));
@@ -241,7 +243,7 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
         String locale = query.getLocale();
         output.setId(entity.getPkid()
                           .toString());
-        if (fieldParamPresent || query.isRequested("label")){
+        if (fieldParamPresent || query.isRequested("label")) {
             String phenomenonLabel = entity.getPhenomenon()
                                            .getLabelFrom(locale);
             String procedureLabel = entity.getProcedure()
@@ -257,7 +259,7 @@ public class TimeseriesRepository extends SessionAwareRepository implements Outp
             output.setUom(entity.getUnitI18nName(locale));
         }
         if (fieldParamPresent || query.isRequested("station")) {
-            output.setStation(createCondensedStation(entity, query, session));
+            output.setStation(createCondensedStation(entity, query.removeFieldParameter() , session));
         }
         return output;
     }

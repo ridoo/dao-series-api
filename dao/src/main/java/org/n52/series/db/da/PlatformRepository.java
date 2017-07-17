@@ -161,9 +161,11 @@ public class PlatformRepository extends ParameterRepository<PlatformEntity, Plat
     protected PlatformOutput createExpanded(PlatformEntity entity, DbQuery parameters, Session session)
             throws DataAccessException {
         PlatformOutput result = createCondensed(entity, parameters, session);
+
         DbQuery query = getDbQuery(parameters.getParameters()
                                              .extendWith(Parameters.PLATFORMS, result.getId())
-                                             .removeAllOf(Parameters.FILTER_PLATFORM_TYPES));
+                                             .removeAllOf(Parameters.FILTER_PLATFORM_TYPES))
+                                             .removeFieldParameter();
 
         List<DatasetOutput> datasets = seriesRepository.getAllCondensed(query);
         if (parameters.fieldParamNotPresent() || parameters.isRequested("datasets")) {

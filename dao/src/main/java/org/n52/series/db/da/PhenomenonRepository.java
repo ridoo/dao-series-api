@@ -73,9 +73,10 @@ public class PhenomenonRepository extends HierarchicalParameterRepository<Phenom
             return result;
         }
         if (parameters.getHrefBase() != null) {
-            result.setService(getCondensedExtendedService(getServiceEntity(entity), parameters));
+            result.setService(getCondensedExtendedService(getServiceEntity(entity),
+                                                          parameters.removeFieldParameter()));
         } else {
-            result.setService(getCondensedService(entity.getService(), parameters));
+            result.setService(getCondensedService(entity.getService(), parameters.removeFieldParameter()));
         }
         return result;
     }
