@@ -86,6 +86,8 @@ public class DbQuery {
 
     private String databaseSridCode = "EPSG:4326";
 
+    private Boolean fieldParamPresent;
+
     public DbQuery(IoParameters parameters) {
         if (parameters != null) {
             this.parameters = parameters;
@@ -340,11 +342,18 @@ public class DbQuery {
 
     public Criteria addDetachedFilters(String propertyName, Criteria criteria) {
         DetachedCriteria filter = DetachedCriteria.forClass(DatasetEntity.class);
+        Set<String> features = parameters.getFeatures();
+        Set<String> procedures = parameters.getProcedures();
+
+        if (hasValues(parameters.getPlatforms())) {
+            features.addAll(getStationaryIds(parameters.getPlatforms()));
+            procedures.addAll(getMobileIds(parameters.getPlatforms()));
+        }
 
         addFilterRestriction(parameters.getPhenomena(), DatasetEntity.PROPERTY_PHENOMENON, filter);
-        addHierarchicalFilterRestriction(parameters.getProcedures(), DatasetEntity.PROPERTY_PROCEDURE, filter, "p_");
+        addHierarchicalFilterRestriction(procedures, DatasetEntity.PROPERTY_PROCEDURE, filter, "p_");
         addHierarchicalFilterRestriction(parameters.getOfferings(), DatasetEntity.PROPERTY_OFFERING, filter, "off_");
-        addFilterRestriction(parameters.getFeatures(), DatasetEntity.PROPERTY_FEATURE, filter);
+        addFilterRestriction(features, DatasetEntity.PROPERTY_FEATURE, filter);
         addFilterRestriction(parameters.getCategories(), DatasetEntity.PROPERTY_CATEGORY, filter);
         addFilterRestriction(parameters.getSeries(), filter);
 
@@ -353,17 +362,6 @@ public class DbQuery {
                                        .map(e -> ValueType.extractId(e))
                                        .collect(Collectors.toSet()),
                              filter);
-
-        if (hasValues(parameters.getPlatforms())) {
-            Set<String> stationaryIds = getStationaryIds(parameters.getPlatforms());
-            Set<String> mobileIds = getMobileIds(parameters.getPlatforms());
-            if (!stationaryIds.isEmpty()) {
-                addFilterRestriction(stationaryIds, DatasetEntity.PROPERTY_FEATURE, filter);
-            }
-            if (!mobileIds.isEmpty()) {
-                addFilterRestriction(mobileIds, DatasetEntity.PROPERTY_PROCEDURE, filter);
-            }
-        }
 
         // TODO refactory/simplify projection
         String projectionProperty = QueryUtils.createAssociation(propertyName, PROPERTY_PKID);
@@ -379,9 +377,9 @@ public class DbQuery {
                                                               DetachedCriteria filter, String prefix) {
         if (hasValues(values)) {
             filter.createCriteria(entity, prefix + "e")
-                  // join the parents to enable filtering via parent ids
-                  .createAlias(prefix + "e.parents", prefix + "p", JoinType.LEFT_OUTER_JOIN)
-                  .add(Restrictions.or(createIdCriterion(values, prefix + "e"),
+                    // join the parents to enable filtering via parent ids
+                    .createAlias(prefix + "e.parents", prefix + "p", JoinType.LEFT_OUTER_JOIN)
+                    .add(Restrictions.or(createIdCriterion(values, prefix + "e"),
                                        Restrictions.in(prefix + "p.pkid", QueryUtils.parseToIds(values))));
         }
         return filter;
@@ -451,6 +449,41 @@ public class DbQuery {
             }
         }
         return set;
+    }
+
+    /**
+     * Returns whether the specific field is requested in the Query parameter "fields".
+     *
+     * @param field
+     *        to be checked if it is requested.
+     *
+     * @return true if field is requested in query, false otherwise.
+     */
+    public boolean isRequested (String field) {
+        return getParameters().getFields().contains(field.toLowerCase());
+    }
+
+    /**
+     * Returns whether the query contains the "field" parameter.
+     *
+     * @return false if field is requested in query, true otherwise.
+     */
+    public boolean fieldParamNotPresent () {
+        if (fieldParamPresent == null) {
+            fieldParamPresent = getParameters().containsParameter(Parameters.FILTER_FIELDS);
+        }
+        return !fieldParamPresent;
+    }
+
+    /**
+     * Removes the "fields" Query-Parameter.
+     *
+     * @return DbQuery itself for method chaining.
+     */
+    public DbQuery removeFieldParameter() {
+        parameters = parameters.removeAllOf("fields");
+        fieldParamPresent = false;
+        return this;
     }
 
     public IoParameters getParameters() {

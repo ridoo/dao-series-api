@@ -161,18 +161,23 @@ public class PlatformRepository extends ParameterRepository<PlatformEntity, Plat
     protected PlatformOutput createExpanded(PlatformEntity entity, DbQuery parameters, Session session)
             throws DataAccessException {
         PlatformOutput result = createCondensed(entity, parameters, session);
+
         DbQuery query = getDbQuery(parameters.getParameters()
                                              .extendWith(Parameters.PLATFORMS, result.getId())
-                                             .removeAllOf(Parameters.FILTER_PLATFORM_TYPES));
+                                             .removeAllOf(Parameters.FILTER_PLATFORM_TYPES))
+                                             .removeFieldParameter();
 
         List<DatasetOutput> datasets = seriesRepository.getAllCondensed(query);
-        result.setDatasets(datasets);
-
-        Geometry geometry = entity.getGeometry();
-        result.setGeometry(geometry == null
-                ? getLastSamplingGeometry(datasets, query, session)
-                : geometry);
-        if (entity.hasParameters()) {
+        if (parameters.fieldParamNotPresent() || parameters.isRequested("datasets")) {
+            result.setDatasets(datasets);
+        }
+        if (parameters.fieldParamNotPresent() || parameters.isRequested("geometry")) {
+            Geometry geometry = entity.getGeometry();
+            result.setGeometry(geometry == null
+                    ? getLastSamplingGeometry(datasets, query, session)
+                    : geometry);
+        }
+        if (parameters.fieldParamNotPresent() || parameters.isRequested("parameters") && entity.hasParameters()) {
             String locale = parameters.getLocale();
             for (Parameter< ? > parameter : entity.getParameters()) {
                 result.addParameter(parameter.toValueMap(locale));
@@ -337,6 +342,7 @@ public class PlatformRepository extends ParameterRepository<PlatformEntity, Plat
 
     private PlatformEntity convertToPlatform(FeatureEntity entity) {
         PlatformEntity result = new PlatformEntity();
+        //TODO(specki): add fields filter
         result.setDomainId(entity.getDomainId());
         result.setPkid(entity.getPkid());
         result.setName(entity.getName());

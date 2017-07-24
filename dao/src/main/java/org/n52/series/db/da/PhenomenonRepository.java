@@ -69,10 +69,14 @@ public class PhenomenonRepository extends HierarchicalParameterRepository<Phenom
     @Override
     protected PhenomenonOutput createExpanded(PhenomenonEntity entity, DbQuery parameters, Session session) {
         PhenomenonOutput result = createCondensed(entity, parameters, session);
+        if (parameters.fieldParamNotPresent() || !parameters.isRequested("service")) {
+            return result;
+        }
         if (parameters.getHrefBase() != null) {
-            result.setService(getCondensedExtendedService(getServiceEntity(entity), parameters));
+            result.setService(getCondensedExtendedService(getServiceEntity(entity),
+                                                          parameters.removeFieldParameter()));
         } else {
-            result.setService(getCondensedService(entity.getService(), parameters));
+            result.setService(getCondensedService(entity.getService(), parameters.removeFieldParameter()));
         }
         return result;
     }

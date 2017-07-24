@@ -60,12 +60,14 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * @author <a href="mailto:h.bredel@52north.org">Henning Bredel</a>
  * @param <T>
- *        the dataset's type this repository is responsible for.
+ *        the datasets type this repository is responsible for.
  */
 public class DatasetRepository<T extends Data> extends SessionAwareRepository
         implements OutputAssembler<DatasetOutput> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatasetRepository.class);
+
+    private final String idstring = "id";
 
     @Autowired
     private IDataRepositoryFactory dataRepositoryFactory;
@@ -157,6 +159,10 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
         return createDataAccessRepository(valueType, session);
     }
 
+    private DatasetDao< ? extends DatasetEntity> getSeriesDao(Class< ? extends DatasetEntity> clazz, Session session) {
+        return new DatasetDao<>(session, clazz);
+    }
+
     private DatasetDao< ? extends DatasetEntity> createDataAccessRepository(String valueType, Session session)
             throws DataAccessException {
         try {
@@ -165,10 +171,6 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
         } catch (DatasetFactoryException e) {
             throw new DataAccessException(e.getMessage());
         }
-    }
-
-    private DatasetDao< ? extends DatasetEntity> getSeriesDao(Class< ? extends DatasetEntity> clazz, Session session) {
-        return new DatasetDao<>(session, clazz);
     }
 
     @Override
@@ -266,13 +268,23 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
     protected DatasetOutput createCondensed(DatasetEntity< ? > series, DbQuery query, Session session)
             throws DataAccessException {
         DatasetOutput output = new DatasetOutput(series.getValueType()) {};
-        output.setLabel(createSeriesLabel(series, query.getLocale()));
+        boolean fieldParamNotPresent = query.fieldParamNotPresent();
         output.setId(series.getPkid()
                            .toString());
-        output.setDomainId(series.getDomainId());
-        output.setHrefBase(urlHelper.getDatasetsHrefBaseUrl(query.getHrefBase()));
-        PlatformOutput platform = getCondensedPlatform(series, query, session);
-        output.setPlatformType(platform.getPlatformType());
+        if (!(fieldParamNotPresent || query.isRequested("valueType"))) {
+            output.setValueType(null);
+        }
+        if (fieldParamNotPresent || query.isRequested("label")) {
+            output.setDomainId(series.getDomainId());
+            output.setLabel(createSeriesLabel(series, query.getLocale()));
+        }
+        if (fieldParamNotPresent || query.isRequested("href")) {
+            output.setHrefBase(urlHelper.getDatasetsHrefBaseUrl(query.getHrefBase()));
+        }
+        if (fieldParamNotPresent || query.isRequested("platformType")) {
+            PlatformOutput platform = getCondensedPlatform(series, query, session);
+            output.setPlatformType(platform.getPlatformType());
+        }
         return output;
     }
 
@@ -280,18 +292,27 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
     protected DatasetOutput createExpanded(DatasetEntity< ? > series, DbQuery query, Session session)
             throws DataAccessException {
         try {
-            DatasetOutput result = createCondensed(series, query, session);
-            SeriesParameters seriesParameters = createSeriesParameters(series, query, session);
-            seriesParameters.setPlatform(getCondensedPlatform(series, query, session));
-            result.setSeriesParameters(seriesParameters);
-
-            if (series.getService() == null) {
+            DatasetOutput result = createCondensed(series, query , session);
+            boolean fieldParamNotPresent = query.fieldParamNotPresent();
+            //TODO(specki): fix upstream dependencies on seriesParameters
+            if (fieldParamNotPresent || query.isRequested("seriesParameters")) {
+                SeriesParameters seriesParams = createSeriesParameters(series, query.removeFieldParameter(), session);
+                seriesParams.setPlatform(getCondensedPlatform(series, query.removeFieldParameter(), session));
+                result.setSeriesParameters(seriesParams);
+            }
+            if (fieldParamNotPresent || query.isRequested("service") && series.getService() == null) {
                 series.setService(getServiceEntity());
             }
-            result.setUom(series.getUnitI18nName(query.getLocale()));
+            if (fieldParamNotPresent || query.isRequested("uom")) {
+                result.setUom(series.getUnitI18nName(query.getLocale()));
+            }
             DataRepository dataRepository = dataRepositoryFactory.create(series.getValueType());
-            result.setFirstValue(dataRepository.getFirstValue(series, session, query));
-            result.setLastValue(dataRepository.getLastValue(series, session, query));
+            if (fieldParamNotPresent || query.isRequested("firstValue")) {
+                result.setFirstValue(dataRepository.getFirstValue(series, session, query));
+            }
+            if (fieldParamNotPresent || query.isRequested("lastValue")) {
+                result.setLastValue(dataRepository.getLastValue(series, session, query));
+            }
             return result;
         } catch (DatasetFactoryException ex) {
             throwNewCreateFactoryException(ex);
@@ -316,11 +337,11 @@ public class DatasetRepository<T extends Data> extends SessionAwareRepository
                                 .getLabelFrom(locale);
         StringBuilder sb = new StringBuilder();
         sb.append(phenomenon)
-          .append(" ");
+            .append(" ");
         sb.append(procedure)
-          .append(", ");
+            .append(", ");
         sb.append(station)
-          .append(", ");
+            .append(", ");
         return sb.append(offering)
                  .toString();
     }

@@ -73,13 +73,17 @@ public class ProcedureRepository extends HierarchicalParameterRepository<Procedu
     @Override
     protected ProcedureOutput createExpanded(ProcedureEntity entity, DbQuery parameters, Session session) {
         ProcedureOutput result = createCondensed(entity, parameters, session);
-        if (parameters.getHrefBase() != null) {
-            result.setService(getCondensedExtendedService(getServiceEntity(entity), parameters));
-        } else {
-            result.setService(getCondensedService(getServiceEntity(entity), parameters));
-        }
         result.setParents(createCondensed(entity.getParents(), parameters, session));
         result.setChildren(createCondensed(entity.getChildren(), parameters, session));
+        if (!parameters.fieldParamNotPresent() || !parameters.isRequested("parameters")) {
+            return result;
+        }
+        if (parameters.getHrefBase() != null) {
+            result.setService(getCondensedExtendedService(getServiceEntity(entity),
+                                                          parameters.removeFieldParameter()));
+        } else {
+            result.setService(getCondensedService(getServiceEntity(entity), parameters.removeFieldParameter()));
+        }
         return result;
     }
 

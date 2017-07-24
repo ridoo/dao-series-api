@@ -177,19 +177,27 @@ public class StationRepository extends SessionAwareRepository
 
     private StationOutput createExpanded(FeatureEntity feature, DbQuery query, Session session)
             throws DataAccessException {
-        Class<QuantityDatasetEntity> clazz = QuantityDatasetEntity.class;
-        DatasetDao<QuantityDatasetEntity> seriesDao = new DatasetDao<>(session, clazz);
-        List<QuantityDatasetEntity> series = seriesDao.getInstancesWith(feature, query);
         StationOutput stationOutput = createCondensed(feature, query);
-        stationOutput.setTimeseries(createTimeseriesList(series, query));
+        if (query.fieldParamNotPresent() || query.isRequested("properties") || query.isRequested("timeseries")) {
+            Class<QuantityDatasetEntity> clazz = QuantityDatasetEntity.class;
+            DatasetDao<QuantityDatasetEntity> seriesDao = new DatasetDao<>(session, clazz);
+            List<QuantityDatasetEntity> series = seriesDao.getInstancesWith(feature, query);
+            stationOutput.setTimeseries(createTimeseriesList(series, query));
+        }
         return stationOutput;
     }
 
     private StationOutput createCondensed(FeatureEntity entity, DbQuery query) {
         StationOutput stationOutput = new StationOutput();
-        stationOutput.setGeometry(createPoint(entity, query));
+        boolean fieldParamPresent = query.fieldParamNotPresent();
         stationOutput.setId(Long.toString(entity.getPkid()));
-        stationOutput.setLabel(entity.getLabelFrom(query.getLocale()));
+
+        if (fieldParamPresent || query.isRequested("geometry") || query.isRequested("type")) {
+            stationOutput.setGeometry(createPoint(entity, query.removeFieldParameter()));
+        }
+        if (fieldParamPresent || query.isRequested("label")) {
+            stationOutput.setLabel(entity.getLabelFrom(query.getLocale()));
+        }
         return stationOutput;
     }
 
